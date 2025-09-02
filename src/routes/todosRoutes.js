@@ -3,20 +3,15 @@ import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
 
 import TodoModel from "../models/todoModel.js";
-import { TodoCreateSchema } from "../validations/todovalidation.js";
+import { TodoCreateSchema } from "../validations/todo-validation.js";
 
 const router = Router();
 
 // NOTE: CREATE NEW TODO
-
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
     const validatedData = TodoCreateSchema.parse(req.body);
-    const data = jwt.verify(
-      req.headers.authorization.split(" ")[1],
-      "JWT_SECRET"
-    );
-    const userId = data.id;
+    const userId = req.userId;
     const createdTodo = await TodoModel.insertOne({
       ...validatedData,
       createdBy: userId,
@@ -28,24 +23,15 @@ router.post("/", async (req, res) => {
       res.status(403).send({ error: "error.", errors: error.issues });
       return;
     }
-
-    if (error instanceof jwt.TokenExpiredError) {
-      res.status(403).send({ error: "Token expired please login again." });
-      return;
-    }
     console.log(`Error - ${req.method}:${req.path} - `, error);
     res.status(500).send({ error: error.message });
   }
 });
 
 // NOTE: READ THE TODO
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
-    const data = jwt.verify(
-      req.headers.authorization.split(" ")[1],
-      "JWT_SECRET"
-    );
-    const userId = data.id;
+    const userId = req.userId;
     const todos = await TodoModel.find({ createdBy: userId });
 
     res.json({ message: "Success fetched.", data: todos });
@@ -58,9 +44,13 @@ router.get("/", async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
-router.get("/:id", async (req, res) => {
+
+router.get("/:id", verifyToken, async (req, res) => {
   try {
-    const todo = await TodoModel.findById(req.params.id);
+    const todo = await TodoModel.findOne({
+      _id: req.params.id,
+      createdBy: req.userId,
+    });
     if (!todo) {
       res.status(404).send({ message: "Not Found." });
       return;

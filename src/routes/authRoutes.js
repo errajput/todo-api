@@ -1,0 +1,65 @@
+import { Router } from "express";
+import { ZodError } from "zod";
+
+import UserModel from "./../models/userModel.js";
+
+import {
+  generateJwt,
+  hashPassword,
+  verifyPassword,
+} from "./../middleware/verifyToken.js";
+import { LoginSchema, RegisterSchema } from "../validations/authvalidation.js";
+
+const router = Router();
+
+router.post("/register", async (req, res) => {
+  try {
+    const validatedData = RegisterSchema.parse(req.body);
+    const user = await UserModel.findOne({ email: validatedData.email });
+
+    if (user) {
+      res.status(400).send({ message: "Email already used." });
+      return;
+    }
+    const { email, password, name } = validatedData;
+    const hashedPassword = await hashPassword(password);
+    const newUser = new UserModel({ email, password: hashedPassword, name });
+    await newUser.save();
+
+    res.send({ message: "User Registered" });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).send({ error: "Error", errors: error.issues });
+      return;
+    }
+    console.log(`Error - ${req.method}:${req.path} - `, error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+router.post("/login", async (req, res) => {
+  try {
+    const validatedData = LoginSchema.parse(req.body);
+    const { email, password } = validatedData;
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      res.status(400).send({ message: "Invalid Cred." });
+      return;
+    }
+    if (!verifyPassword(password, user.password)) {
+      res.status(400).send({ message: "Invalid Cred." });
+    }
+
+    const token = generateJwt({ email, id: user._id });
+    res.send({ message: "Login Successful.", data: { token } });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).send({ error: "Error", errors: error.issues });
+      return;
+    }
+    console.log(`Error - ${req.method}:${req.path} - `, error);
+    res.status(500).send({ error: error.message });
+  }
+});
+
+export default router;

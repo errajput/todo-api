@@ -3,12 +3,8 @@ import { ZodError } from "zod";
 
 import UserModel from "./../models/userModel.js";
 
-import {
-  generateJwt,
-  hashPassword,
-  verifyPassword,
-} from "./../middleware/verifyToken.js";
 import { LoginSchema, RegisterSchema } from "../validations/authvalidation.js";
+import { generateJwt, hashPassword, verifyPassword } from "../shared/utils.js";
 
 const router = Router();
 
@@ -46,8 +42,9 @@ router.post("/login", async (req, res) => {
       res.status(400).send({ message: "Invalid Cred." });
       return;
     }
-    if (!verifyPassword(password, user.password)) {
+    if (!(await verifyPassword(password, user.password))) {
       res.status(400).send({ message: "Invalid Cred." });
+      return;
     }
 
     const token = generateJwt({ email, id: user._id });

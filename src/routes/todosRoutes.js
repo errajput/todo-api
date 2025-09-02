@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
 
 import TodoModel from "../models/todoModel.js";
-import { TodoCreateSchema } from "../validations/todo-validation.js";
+import { TodoCreateSchema } from "../validations/todoValidation.js";
+import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = Router();
 
@@ -62,6 +63,7 @@ router.get("/:id", verifyToken, async (req, res) => {
     res.status(500).send({ error: error.message });
   }
 });
+
 // NOTE: UPDATE THE TODO
 router.patch("/:id", async (req, res) => {
   try {

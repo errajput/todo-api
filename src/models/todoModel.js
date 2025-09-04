@@ -10,10 +10,6 @@ const TodoSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    order: {
-      type: Number,
-      default: 0,
-    },
     createdBy: {
       type: Schema.ObjectId,
       required: true,

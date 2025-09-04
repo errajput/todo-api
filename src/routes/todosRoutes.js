@@ -68,9 +68,9 @@ router.get("/:id", verifyToken, async (req, res) => {
 router.patch("/:id", verifyToken, async (req, res) => {
   try {
     const validatedData = TodoCreateSchema.parse(req.body);
-    // const userId = req.userId;
+    const userId = req.userId;
     const updatedTodo = await TodoModel.updateOne(
-      { _id: req.params.id },
+      { _id: req.params.id, createdBy: userId },
       { $set: { ...validatedData } }
     );
 

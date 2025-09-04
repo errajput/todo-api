@@ -6,7 +6,7 @@ import UserModel from "../models/userModel.js";
 
 const router = Router();
 
-router.get("/", verifyToken, async (req, res) => {
+router.get("/profile", verifyToken, async (req, res) => {
   // const token = req.headers.authorization;
 
   // if (!token) {

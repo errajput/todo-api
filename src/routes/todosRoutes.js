@@ -18,7 +18,7 @@ router.post("/", verifyToken, async (req, res) => {
       createdBy: userId,
     });
 
-    res.json({ message: "Success fetched.", data: createdTodo.id });
+    res.json({ message: "Add a Todo Successfully.", data: createdTodo.id });
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(403).send({ error: "error.", errors: error.issues });
@@ -35,7 +35,7 @@ router.get("/", verifyToken, async (req, res) => {
     const userId = req.userId;
     const todos = await TodoModel.find({ createdBy: userId });
 
-    res.json({ message: "Success fetched.", data: todos });
+    res.json({ message: "todos Successfully fetched.", data: todos });
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       res.status(403).send({ error: "Token expired please login again." });
@@ -57,7 +57,7 @@ router.get("/:id", verifyToken, async (req, res) => {
       return;
     }
 
-    res.json({ message: "Success fetched.", data: todo });
+    res.json({ message: "A Todo Successfully fetched.", data: todo });
   } catch (error) {
     console.log(`Error - ${req.method}:${req.path} - `, error);
     res.status(500).send({ error: error.message });
@@ -65,15 +65,16 @@ router.get("/:id", verifyToken, async (req, res) => {
 });
 
 // NOTE: UPDATE THE TODO
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", verifyToken, async (req, res) => {
   try {
     const validatedData = TodoCreateSchema.parse(req.body);
-    await TodoModel.updateOne(
+    // const userId = req.userId;
+    const updatedTodo = await TodoModel.updateOne(
       { _id: req.params.id },
       { $set: { ...validatedData } }
     );
 
-    res.json({ message: "Success Updated." });
+    res.json({ message: "Todo Updated successfully.", data: updatedTodo });
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(400).send({ error: "error.", errors: error.issues });
@@ -85,10 +86,15 @@ router.patch("/:id", async (req, res) => {
 });
 
 // NOTE: DELETE THE TODO
-router.delete("/todos/:id", async (req, res) => {
+router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    const todos = await TodoModel.find();
-    res.send({ message: "Success Fetched.", data: todos });
+    const userId = req.userId;
+    const todos = await TodoModel.deleteOne({
+      _id: req.params.id,
+      createdBy: userId,
+    });
+
+    res.send({ message: "Todo delete Successfully.", data: todos });
   } catch (error) {
     console.log(`Error - ${req.method}:${req.path} - `, error);
     res.status(500).send({ error: error.message });

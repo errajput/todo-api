@@ -8,3 +8,4 @@ export const TodoCreateSchema = z.object(
     error: "Invalid data in body.",
   }
 );
+export const UpdatedSchema = TodoCreateSchema.partial();

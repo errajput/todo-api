@@ -3,8 +3,12 @@ import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
 
 import TodoModel from "../models/todoModel.js";
-import { TodoCreateSchema } from "../validations/todoValidation.js";
+import {
+  TodoCreateSchema,
+  UpdatedSchema,
+} from "../validations/todoValidation.js";
 import { verifyToken } from "../middleware/verifyToken.js";
+import { UpdateUserSchema } from "../validations/authvalidation.js";
 
 const router = Router();
 
@@ -21,7 +25,7 @@ router.post("/", verifyToken, async (req, res) => {
     res.json({ message: "Add a Todo Successfully.", data: createdTodo.id });
   } catch (error) {
     if (error instanceof ZodError) {
-      res.status(403).send({ error: "error.", errors: error.issues });
+      res.status(400).send({ error: "error.", errors: error.issues });
       return;
     }
     console.log(`Error - ${req.method}:${req.path} - `, error);
@@ -67,7 +71,7 @@ router.get("/:id", verifyToken, async (req, res) => {
 // NOTE: UPDATE THE TODO
 router.patch("/:id", verifyToken, async (req, res) => {
   try {
-    const validatedData = TodoCreateSchema.parse(req.body);
+    const validatedData = UpdatedSchema.parse(req.body);
     const userId = req.userId;
     const updatedTodo = await TodoModel.updateOne(
       { _id: req.params.id, createdBy: userId },

@@ -9,20 +9,7 @@ import { UpdateUserSchema } from "../validations/authvalidation.js";
 const router = Router();
 
 router.get("/profile", verifyToken, async (req, res) => {
-  // const token = req.headers.authorization;
-
-  // if (!token) {
-  //   res.send({ message: "Token is required." });
-  //   return;
-  // }
-
   try {
-    // const payload = verifyJwt(token);
-
-    // if (!payload) {
-    //   res.send({ message: "Invalid Token" });
-    //   return;
-    // }
     const user = await UserModel.findById(req.userId, "-password -__v");
 
     return res.send({ message: "Successfully fetched.", data: { user } });

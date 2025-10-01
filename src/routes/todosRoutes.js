@@ -17,9 +17,15 @@ router.post("/", verifyToken, async (req, res) => {
   try {
     const validatedData = TodoCreateSchema.parse(req.body);
     const userId = req.userId;
-    const createdTodo = await TodoModel.insertOne({
+    const lastTodo = await TodoModel.findOne({ createdBy: userId }).sort({
+      order: -1,
+    });
+    const nextOrder = lastTodo ? lastTodo.order + 1 : 0;
+
+    const createdTodo = await TodoModel.create({
       ...validatedData,
       createdBy: userId,
+      order: nextOrder,
     });
 
     res.json({ message: "Add a Todo Successfully.", data: createdTodo.id });
@@ -37,7 +43,9 @@ router.post("/", verifyToken, async (req, res) => {
 router.get("/", verifyToken, async (req, res) => {
   try {
     const userId = req.userId;
-    const todos = await TodoModel.find({ createdBy: userId });
+    const todos = await TodoModel.find({ createdBy: userId }).sort({
+      order: 1,
+    });
 
     res.json({ message: "todos Successfully fetched.", data: todos });
   } catch (error) {

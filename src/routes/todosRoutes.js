@@ -7,7 +7,7 @@ import {
   TodoCreateSchema,
   UpdatedSchema,
 } from "../validations/todoValidation.js";
-import { verifyToken } from "../middleware/verifyToken.js";
+import { verifyToken } from "../middleware/authmiddleware.js";
 import { UpdateUserSchema } from "../validations/authvalidation.js";
 
 const router = Router();

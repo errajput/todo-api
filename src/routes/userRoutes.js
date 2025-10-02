@@ -1,7 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 
-import { verifyToken } from "../middleware/verifyToken.js";
+import { verifyToken } from "../middleware/authmiddleware.js";
 import UserModel from "../models/userModel.js";
 import { ZodError } from "zod";
 import { UpdateUserSchema } from "../validations/authvalidation.js";

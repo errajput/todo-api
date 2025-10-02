@@ -1,9 +1,10 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
-import { ZodError } from "zod";
+import z, { ZodError } from "zod";
 
 import TodoModel from "../models/todoModel.js";
 import {
+  ReorderSchema,
   TodoCreateSchema,
   UpdatedSchema,
 } from "../validations/todoValidation.js";
@@ -94,6 +95,28 @@ router.patch("/:id", verifyToken, async (req, res) => {
     }
     console.log(`Error - ${req.method}:${req.path} - `, error);
     res.status(500).send({ error: error.message });
+  }
+});
+
+router.put("/reorder", verifyToken, async (req, res) => {
+  try {
+    // const todosOrder = [{_id: 'A', order: 2}, {_id: 'B', order: 1 }];
+    const updatedTodoOrder = ReorderSchema.parse(req.body);
+
+    for (const todo of updatedTodoOrder) {
+      const updatedData = await TodoModel.updateOne(
+        { _id: todo._id },
+        { order: todo.order }
+      );
+    }
+
+    res.send({ message: "Order Updated" });
+  } catch (error) {
+    console.log(error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).send(error.issues);
+    }
+    res.status(500).send(error.message);
   }
 });
 

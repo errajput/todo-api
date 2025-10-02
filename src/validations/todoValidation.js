@@ -9,3 +9,10 @@ export const TodoCreateSchema = z.object(
   }
 );
 export const UpdatedSchema = TodoCreateSchema.partial();
+
+export const ReorderSchema = z.array(
+  z.object({
+    _id: z.string(),
+    order: z.number(),
+  })
+);

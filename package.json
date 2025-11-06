@@ -1,5 +1,5 @@
 {
-  "type": "module",
+  "name": "todo-api",
   "scripts": {
     "dev": "tsx --env-file=.env --watch src/index.ts",
     "build": "tsc",

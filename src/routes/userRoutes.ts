@@ -1,49 +1,82 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-
-import { verifyToken } from "../middleware/authmiddleware.js";
-import UserModel from "../models/userModel.js";
 import { ZodError } from "zod";
-import { UpdateUserSchema } from "../validations/authvalidation.js";
+
+import { verifyToken } from "../middleware/authmiddleware";
+import UserModel from "../models/userModel";
+import { UpdateUserSchema } from "../validations/authvalidation";
 
 const router = Router();
 
-router.get("/profile", verifyToken, async (req, res) => {
-  try {
-    const user = await UserModel.findById(req.userId, "-password -__v");
+//  Extend Express Request to include `userId`
+interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
 
-    return res.send({ message: "Successfully fetched.", data: { user } });
-  } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      res.status(403).send({ error: "Token expired please login again." });
-      return;
+//  GET /user/profile
+
+router.get(
+  "/profile",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const user = await UserModel.findById(req.userId, "-password -__v");
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      return res.json({
+        message: "Successfully fetched.",
+        data: { user },
+      });
+    } catch (error: any) {
+      if (error instanceof jwt.TokenExpiredError) {
+        return res
+          .status(403)
+          .json({ error: "Token expired, please login again." });
+      }
+
+      console.error(`Error - ${req.method}:${req.path} - `, error);
+      return res.status(500).json({ error: error.message });
     }
-    console.log(`Error - ${req.method}:${req.path} - `, error);
-    res.status(500).send({ error: error.message });
   }
-});
-router.patch("/profile", verifyToken, async (req, res) => {
-  try {
-    const { name } = UpdateUserSchema.parse(req.body);
+);
 
-    const user = await UserModel.findByIdAndUpdate(
-      req.userId, // comes from verifyToken
-      { $set: { name } },
-      { new: true }
-    ).select("-password"); // don’t send password in response
+//  PATCH /user/profile
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+router.patch(
+  "/profile",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { name } = UpdateUserSchema.parse(req.body);
 
-    res.json({ message: "Profile updated successfully", user });
-  } catch (err) {
-    if (err instanceof ZodError) {
-      return res
-        .status(400)
-        .json({ error: "Validation failed", issues: err.issues });
+      const user = await UserModel.findByIdAndUpdate(
+        req.userId,
+        { $set: { name } },
+        { new: true }
+      ).select("-password");
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      return res.json({
+        message: "Profile updated successfully",
+        user,
+      });
+    } catch (err: any) {
+      if (err instanceof ZodError) {
+        return res
+          .status(400)
+          .json({ error: "Validation failed", issues: err.issues });
+      }
+
+      console.error(`Error - ${req.method}:${req.path}`, err);
+      return res.status(500).json({ error: err.message });
     }
-    console.error(`Error - ${req.method}:${req.path}`, err);
-    res.status(500).json({ error: err.message });
   }
-});
+);
 
 export default router;
